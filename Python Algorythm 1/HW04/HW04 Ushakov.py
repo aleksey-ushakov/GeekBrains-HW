@@ -60,7 +60,9 @@ def prime_eratosfen(n):
     while len(prime_lst) < n:
         for i in prime_lst:
             if chek_num % i == 0: break
-            if i == prime_lst[-1]: prime_lst.append(chek_num)
+            if i > chek_num / 2:
+                prime_lst.append(chek_num)
+                break
         chek_num += 1
     print("Алгоритм проверки - Решето Эратосфена:", prime_lst[-1])
     return prime_lst[-1]

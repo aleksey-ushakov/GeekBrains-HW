@@ -1,0 +1,85 @@
+USE `CountryDB`;
+
+
+DROP TABLE `CountryDB`.`lst_District`;
+
+SHOW COLUMNS IN `CountryDB`.`lst_Country`;
+
+ALTER TABLE `lst_Country`
+
+RENAME TO `_countries`,
+CHANGE `id_country` `id` INT NOT NULL AUTO_INCREMENT,
+
+CHANGE `name_country_ru` `title` VARCHAR(150),
+
+DROP COLUMN `name_country_en`;
+
+SHOW COLUMNS IN `CountryDB`.`_countries`;
+
+SHOW COLUMNS IN `CountryDB`.`lst_Oblast`;
+
+ALTER TABLE `lst_Oblast`
+
+RENAME TO `_regions`,
+
+CHANGE `id_oblast` `id` INT NOT NULL AUTO_INCREMENT,
+
+CHANGE `id_country` `country_id` INT NOT NULL,
+
+CHANGE `name_oblast_ru` `title` VARCHAR(150) NOT NULL, 
+DROP COLUMN `name_oblast_en`,
+
+ADD FOREIGN KEY (`country_id`) REFERENCES _countries(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+SHOW COLUMNS IN `CountryDB`.`_regions`;
+
+SHOW COLUMNS IN `CountryDB`.`lst_City`;
+
+ALTER TABLE `lst_City`
+
+RENAME TO `_cities`,
+
+ADD COLUMN `important` TINYINT(1) NOT NULL DEFAULT '1',
+
+ADD COLUMN `country_id` INT,
+
+ADD INDEX (`title`),
+
+CHANGE `id_city` `id` INT NOT NULL AUTO_INCREMENT,
+
+CHANGE `id_oblast` `region_id` INT NOT NULL,
+
+CHANGE `name_city_ru` `title` VARCHAR(150) NOT NULL,
+ADD FOREIGN KEY (`country_id`) REFERENCES _countries(`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+ADD FOREIGN KEY (`region_id`) REFERENCES _regions(`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+
+DROP COLUMN `name_city_en`,
+
+DROP COLUMN `id_district`;
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '1' WHERE (`id` = '7');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '1' WHERE (`id` = '1');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '1' WHERE (`id` = '5');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '1' WHERE (`id` = '2');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '5' WHERE (`id` = '3');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '4' WHERE (`id` = '4');
+
+UPDATE `CountryDB`.`_cities` SET `country_id` = '3' WHERE (`id` = '6');
+
+ALTER TABLE `_cities`
+
+CHANGE `country_id` `country_id` INT NOT NULL;
+
+
+SHOW COLUMNS IN `CountryDB`.`_cities`;
+
+
+
+
+

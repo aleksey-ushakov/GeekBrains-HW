@@ -1,0 +1,104 @@
+#База данных «Страны и города мира»:
+USE `CountryDB`;
+
+#1. Сделать запрос, в котором мы выберем все данные о городе – регион, страна.
+
+SELECT `_cities`.`title` AS `Город`, `_cities`.`important` AS `Столица`, `_countries`.`title` AS `Страна`, `_regions`.`title` AS `Область` 
+FROM (`_cities` LEFT JOIN `_countries` ON `_cities`.`country_id` = `_countries`.`id`) LEFT JOIN `_regions` ON `_cities`.`region_id` = `_regions`.`id` ORDER BY `_cities`.`title`;
+
+#2. Выбрать все города из Московской области.
+
+SELECT `_cities`.`title` AS `Город` FROM (`_cities` LEFT JOIN `_regions` ON `_cities`.`region_id` = `_regions`.`id`) WHERE (`_regions`.`title` LIKE 'Московская');
+
+
+
+#База данных «Сотрудники»:
+
+CREATE SCHEMA IF NOT EXISTS `OfficeDB` CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE `OfficeDB`;
+
+
+CREATE TABLE IF NOT EXISTS `OfficeDB`.`lst_dep` (
+
+`id_dep` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+`dep_title` VARCHAR(150) NOT NULL UNIQUE);
+
+
+CREATE TABLE IF NOT EXISTS `OfficeDB`.`lst_staff`(
+
+`id_staff` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(150) NOT NULL UNIQUE,
+
+`position` VARCHAR(150) NOT NULL,
+
+`id_dep` INT NOT NULL,
+`salary` INT);
+
+ALTER TABLE `OfficeDB`.`lst_staff` ADD FOREIGN KEY (`id_dep`) REFERENCES `lst_dep`(`id_dep`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+INSERT INTO `OfficeDB`.`lst_dep` (`dep_title`) VALUES 
+('Отдел продаж'),
+('Отдел маркетинга'),
+('Отдел персонала'),
+('Производтво'),
+('Администрация');
+
+INSERT INTO `OfficeDB`.`lst_staff` (`name`, `id_dep`, `position`, `salary`) VALUES
+
+('Иванов', 1, 'Консультант', 23000),
+
+('Петров', 1, 'Старший продавец', 25000),
+
+('Сидоров', 1, 'Менеджер по продажам', 17000),
+
+('Дмитриева', 2, 'Продакт менеджер', 23000),
+
+('Павлова', 2, 'Руководитель отдела маркетинга', 19000),
+
+('Костонаева', 2, 'Маркетинг менеджер', 31000),
+
+('Изюмин', 3, 'Менеджер по кадрам', 16000),
+
+('Крот', 4, 'Токарь', 14000),
+
+('Стриханов', 4, 'Начальник смены', 27000),
+
+('Коробец', 4, 'Директор производства', 21000),
+
+('Костанаев', 5, 'Генеральный директор', 40000);
+
+#1. Выбрать среднюю зарплату по отделам.
+
+SELECT `lst_dep`.`dep_title` AS `Департамент`, ROUND(AVG(`lst_staff`.`salary`)) AS `Средняя ЗП`
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep` 
+GROUP BY `lst_dep`.`id_dep` ORDER BY `Средняя ЗП` DESC;
+
+
+#2. Выбрать максимальную зарплату у сотрудника.
+SELECT `lst_staff`.`name` AS `ФИО`, `lst_staff`.`salary` AS `ЗП`, `lst_staff`.`position` AS `Должность` 
+FROM `lst_staff` WHERE `lst_staff`.`salary` IN (SELECT MAX(salary) FROM `lst_staff`);
+
+
+#4. Посчитать количество сотрудников во всех отделах.
+
+SELECT `lst_dep`.`dep_title` AS `Департамент`, COUNT(`lst_staff`.`id_staff`) AS `Кол-во сотрудников` 
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep` 
+GROUP BY `lst_dep`.`id_dep` ORDER BY `Кол-во сотрудников` DESC;
+
+
+#5. Найти количество сотрудников в отделах и посмотреть, сколько всего денег получает отдел.
+
+
+SELECT `lst_dep`.`dep_title` AS `Департамент`, COUNT(`lst_staff`.`id_staff`) AS `Кол-во сотрудников`, SUM(`lst_staff`.`salary`) AS `Бюджет ЗП` 
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep` GROUP BY `lst_dep`.`id_dep` ORDER BY `Бюджет ЗП` DESC;
+
+
+#3. Удалить одного сотрудника, у которого максимальная зарплата.
+
+DELETE FROM `lst_staff` ORDER BY `salary` DESC, `name`  LIMIT 1;
+
+DROP SCHEMA `OfficeDB`;
+

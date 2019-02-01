@@ -1,0 +1,139 @@
+﻿#1 Создать VIEW на основе запросов, которые вы сделали в ДЗ к уроку 3.
+
+#1.1 База данных «Страны и города мира»:
+USE `CountryDB`;
+
+#1.1.1 Сделать запрос, в котором мы выберем все данные о городе – регион, страна.
+CREATE VIEW `view_cities` AS 
+SELECT `_cities`.`title` AS `Город`, `_cities`.`important` AS `Столица`, `_countries`.`title` AS `Страна`, `_regions`.`title` AS `Область` 
+FROM (`_cities` LEFT JOIN `_countries` ON `_cities`.`country_id` = `_countries`.`id`) LEFT JOIN `_regions` ON `_cities`.`region_id` = `_regions`.`id` ORDER BY `_cities`.`title`;
+
+#1.1.2 Выбрать все города из Московской области
+CREATE VIEW `view_cities_moscow_region` AS 
+SELECT `_cities`.`title` AS `Город` FROM (`_cities` LEFT JOIN `_regions` ON `_cities`.`region_id` = `_regions`.`id`) WHERE (`_regions`.`title` LIKE 'Московская');
+
+#1.2 База данных «Сотрудники»:
+USE `OfficeDB`;
+#1.2.1 Выбрать среднюю зарплату по отделам.
+CREATE VIEW `view_avg_salary_by_department` AS 
+SELECT `lst_dep`.`dep_title` AS `Департамент`, ROUND(AVG(`lst_staff`.`salary`)) AS `Средняя ЗП`
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep` 
+GROUP BY `lst_dep`.`id_dep` ORDER BY `Средняя ЗП` DESC;
+
+#1.2.2 Выбрать максимальную зарплату у сотрудника.
+CREATE VIEW `view_max_salary_by_department` AS 
+SELECT CONCAT(`lst_staff`.`name`, ' ', `lst_staff`.`surname`) AS `ФИО`, `lst_staff`.`salary` AS `ЗП`, `lst_staff`.`position` AS `Должность` 
+
+FROM `lst_staff` WHERE `lst_staff`.`salary` IN (SELECT MAX(salary) FROM `lst_staff`);
+
+#1.2.3 Посчитать количество сотрудников во всех отделах.
+CREATE VIEW `view_staff_qty_by_department` AS 
+SELECT `lst_dep`.`dep_title` AS `Департамент`, COUNT(`lst_staff`.`id_staff`) AS `Кол-во сотрудников` 
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep` 
+GROUP BY `lst_dep`.`id_dep` ORDER BY `Кол-во сотрудников` DESC;
+
+#1.2.4 Найти количество сотрудников в отделах и посмотреть, сколько всего денег получает отдел.
+CREATE VIEW `view_staff_qty_salary_by_department` AS 
+SELECT `lst_dep`.`dep_title` AS `Департамент`, COUNT(`lst_staff`.`id_staff`) AS `Кол-во сотрудников`, SUM(`lst_staff`.`salary`) AS `Бюджет ЗП`
+
+FROM `lst_dep` LEFT JOIN `lst_staff` ON `lst_dep`.`id_dep` = `lst_staff`.`id_dep`
+GROUP BY `lst_dep`.`id_dep` ORDER BY `Бюджет ЗП` DESC;
+
+
+#2. Создать функцию, которая найдет менеджера по имени и фамилии.
+
+# Функция возвращает уникальный id сотрудника с задаными именем и фамилией
+
+USE `OfficeDB`;
+
+CREATE FUNCTION FIND_MANAGER (find_name CHAR(150), find_surname CHAR(150))
+
+RETURNS CHAR(150) DETERMINISTIC
+
+RETURN IF((SELECT COUNT(*) FROM `lst_staff` WHERE `lst_staff`.`name` = find_name AND `lst_staff`.`surname` = find_surname) != 0 , 
+(SELECT `lst_staff`.`id_staff` FROM `lst_staff` WHERE `lst_staff`.`name` = find_name AND `lst_staff`.`surname` = find_surname LIMIT 1), 
+'Такого сотрудника нет!');
+
+
+
+SELECT FIND_MANAGER ('Петр', 'Сидоров');
+
+SELECT FIND_MANAGER ('Пер', 'Сидоров');
+
+
+#3. Создать триггер, который при добавлении нового сотрудника будет выплачивать ему вступительный бонус, занося запись об этом в таблицу salary.
+DELIMITER //
+
+CREATE TRIGGER new_staff AFTER INSERT ON `lst_staff`
+
+FOR EACH ROW
+
+BEGIN
+
+INSERT INTO `reg_salary` (`id_staff`, `amt`, `payment_date`, `comment`) 
+values (NEW.`id_staff`, 100, CURDATE(), 'welcome bonus');
+
+END
+//
+
+DELIMITER ;
+
+# Для проверки работы тригера
+INSERT INTO `OfficeDB`.`lst_staff` (`name`, `surname`, `id_dep`, `position`, `salary`) VALUES
+('Алексей', 'Антонов', 3, 'Секретарь', 40000);
+
+
+
+#Создание и наполнение базы данных «Сотрудники»:
+
+DROP SCHEMA `OfficeDB`;
+CREATE SCHEMA IF NOT EXISTS `OfficeDB` CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE `OfficeDB`;
+
+CREATE TABLE IF NOT EXISTS `OfficeDB`.`lst_dep` (
+`id_dep` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`dep_title` VARCHAR(150) NOT NULL UNIQUE);
+
+CREATE TABLE IF NOT EXISTS `OfficeDB`.`lst_staff`(
+`id_staff` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`name` VARCHAR(150) NOT NULL,
+`surname` VARCHAR(150) NOT NULL,
+`position` VARCHAR(150) NOT NULL,
+
+`id_dep` INT NOT NULL,
+`salary` INT);
+ALTER TABLE `OfficeDB`.`lst_staff` ADD FOREIGN KEY (`id_dep`) REFERENCES `lst_dep`(`id_dep`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+CREATE TABLE IF NOT EXISTS `OfficeDB`.`reg_salary` (
+
+`id_staff` INT NOT NULL,
+`payment_date` DATE NOT NULL,
+
+`amt` DECIMAL(10,2),
+`comment` VARCHAR(150));
+
+ALTER TABLE `OfficeDB`.`reg_salary` ADD FOREIGN KEY (`id_staff`) REFERENCES `lst_staff`(`id_staff`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+
+INSERT INTO `OfficeDB`.`lst_dep` (`dep_title`) VALUES 
+('Отдел продаж'),
+('Отдел маркетинга'),
+('Отдел персонала'),
+('Производтво'),
+('Администрация');
+
+INSERT INTO `OfficeDB`.`lst_staff` (`name`, 'surname', `id_dep`, `position`, `salary`) VALUES
+('Алексей', 'Иванов', 1, 'Консультант', 23000),
+('Дмитрий', 'Петров', 1, 'Старший продавец', 25000),
+('Петр', 'Сидоров', 1, 'Менеджер по продажам', 17000),
+('Андрей', 'Дмитриева', 2, 'Продакт менеджер', 23000),
+('Семен', 'Павлова', 2, 'Руководитель отдела маркетинга', 19000),
+('Анна', 'Костонаева', 2, 'Маркетинг менеджер', 31000),
+('Светлана', 'Изюмин', 3, 'Менеджер по кадрам', 16000),
+('Генадий', 'Крот', 4, 'Токарь', 14000),
+('Артем', 'Стриханов', 4, 'Начальник смены', 27000),
+('Дмитрий', 'Коробец', 4, 'Директор производства', 21000),
+('Алексей', 'Костанаев', 5, 'Генеральный директор', 40000);

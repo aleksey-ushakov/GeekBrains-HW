@@ -1,6 +1,8 @@
 #HW06 Aleksey Ushakov
 #Python 3.7 64bit
 
+
+
 import random
 import timeit
 import math

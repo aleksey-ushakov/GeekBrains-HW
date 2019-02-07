@@ -12,19 +12,12 @@ import timeit
 import datetime
 
 
-def time(func):
-    def t(*args, **kwargs):
-        start = datetime.time()
-        res = func(*args, **kwargs)
-        print("Время выполнения алгоритма:", datetime.timedelta(datetime.time(), start))
-        return res
-    return t
-
 print("""\n\nЗадача 1
 Отсортируйте по убыванию методом "пузырька" одномерный целочисленный массив, заданный случайными числами на промежутке [-100; 100).
 Выведите на экран исходный и отсортированный массивы. Сортировка должна быть реализована в виде функции. По возможности доработайте алгоритм (сделайте его умнее).
 """)
 
+@time
 def bubble_sort(lst):
     work_lst = lst[:]
     for j in range(len(work_lst)-1, 1, -1):
@@ -51,7 +44,7 @@ print("""\n\nЗадача 2
 """)
 
 def quick_sort(lst):
-    return (fast_sort([i for i in lst if i < lst[len(lst) // 2]]) + [i for i in lst if i == lst[len(lst) // 2]] + fast_sort([i for i in lst if i > lst[len(lst) // 2]])) if len(lst) > 1 else lst
+    return (quick_sort([i for i in lst if i < lst[len(lst) // 2]]) + [i for i in lst if i == lst[len(lst) // 2]] + quick_sort([i for i in lst if i > lst[len(lst) // 2]])) if len(lst) > 1 else lst
 
 
 def merge_sort(lst):

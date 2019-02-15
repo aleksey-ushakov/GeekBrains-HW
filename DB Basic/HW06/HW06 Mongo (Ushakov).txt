@@ -1,0 +1,38 @@
+﻿mongo
+....
+> use users
+switched to db users
+
+> db.createUser({user:"admin", pwd:"1234", roles:["readWrite","dbAdmin"]})
+Successfully added user: { "user" : "admin", "roles" : [ "readWrite", "dbAdmin" ] }
+
+> db.users.insert({"name":"Tom", "age":28, languages:["english","spanish"]})
+WriteResult({ "nInserted" : 1 })
+
+> db.users.find()
+{ "_id" : ObjectId("5c5c24024bf4f50442dbe34f"), "name" : "Tom", "age" : 28, "languages" : [ "english", "spanish" ] }
+
+> db.users.insert({"company":{"name":"Microsoft","age": 25, languages: ["english",    "spanish"]}}) 
+WriteResult({ "nInserted" : 1 })
+
+> db.users.find({"company.name":"Microsoft"})
+{ "_id" : ObjectId("5c5c24dc46b17bf2e1e75e8c"), "company" : { "name" : "Microsoft", "age" : 25, "languages" : [ "english", "spanish" ] } }
+
+> db.users.find({age:{$lt:30}})
+{ "_id" : ObjectId("5c5c24024bf4f50442dbe34f"), "name" : "Tom", "age" : 28, "languages" : [ "english", "spanish" ] }
+
+> db.users.find({age:{$ne: "18"}})
+{ "_id" : ObjectId("5c5c24024bf4f50442dbe34f"), "name" : "Tom", "age" : 28, "languages" : [ "english", "spanish" ] }
+{ "_id" : ObjectId("5c5c24dc46b17bf2e1e75e8c"), "company" : { "name" : "Microsoft", "age" : 25, "languages" : [ "english", "spanish" ] } }
+
+> db.users.find({"company.age": {$in: [20, 15, 25]}})
+{ "_id" : ObjectId("5c5c24dc46b17bf2e1e75e8c"), "company" : { "name" : "Microsoft", "age" : 25, "languages" : [ "english", "spanish" ] } }
+
+> db.users.find({languages: {$size:2}})
+{ "_id" : ObjectId("5c5c24024bf4f50442dbe34f"), "name" : "Tom", "age" : 28, "languages" : [ "english", "spanish" ] }
+
+> db.users.save({name: "Eugene", age: 29, language:["english","spanish","german"]})
+WriteResult({ "nInserted" : 1 })
+
+> db.users.update({name: "Eugene", age: 29}, {$set: {age:30}})
+WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })

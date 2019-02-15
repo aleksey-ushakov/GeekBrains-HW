@@ -1,0 +1,201 @@
+﻿#AUTHOR USHAKOV
+#необходимо просто скопировать текст в окно Workbench
+
+
+#Задача 1. У вас есть социальная сеть, где пользователи (id, имя) могут ставить друг другу лайки.
+#Создайте необходимые таблицы для хранения данной информации.
+#DROP SCHEMA `SocialDB`;
+
+CREATE SCHEMA IF NOT EXISTS `SocialDB` CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `SocialDB`;
+
+CREATE TABLE IF NOT EXISTS `SocialDB`.`lst_users` (
+`user_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+`user_name` VARCHAR(150) NOT NULL UNIQUE);
+
+CREATE TABLE IF NOT EXISTS `SocialDB`.`lst_object_type` (
+
+`object_type_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+`object_type_name` VARCHAR(150) NOT NULL UNIQUE,
+
+`object_type_comment` VARCHAR(300));
+
+CREATE TABLE IF NOT EXISTS `SocialDB`.`reg_object` (
+
+`object_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+
+`object_type_id` INT NOT NULL,
+`user_id` INT NOT NULL,
+
+`object_create_date` DATE NOT NULL,
+`ref_object_id` INT,
+
+`object_link` VARCHAR(300),
+`object_content` VARCHAR(150));
+
+ALTER TABLE `SocialDB`.`reg_object` ADD FOREIGN KEY (`user_id`) REFERENCES `lst_users`(`user_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE `SocialDB`.`reg_object` ADD FOREIGN KEY (`ref_object_id`) REFERENCES `reg_object`(`object_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE `SocialDB`.`reg_object` ADD FOREIGN KEY (`object_type_id`) REFERENCES `lst_object_type`(`object_type_id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
+CREATE TABLE IF NOT EXISTS `SocialDB`.`reg_like` (
+`user_id` INT NOT NULL,
+`object_id` INT NOT NULL);
+
+# Тригер, который создает объект "Карточка пользователя" при добавлении нового пользователя
+DELIMITER //
+CREATE TRIGGER new_user AFTER INSERT ON `lst_users`
+FOR EACH ROW
+BEGIN
+INSERT INTO `reg_object` (`object_type_id`, `user_id`, `object_create_date`, `object_link`, `object_content`) 
+VALUES ((SELECT `object_type_id` FROM `SocialDB`.`lst_object_type` WHERE `object_type_name` = 'Карточка пользователя' LIMIT 1), NEW.`user_id`, CURDATE(), CONCAT('https://www.socialdb/', NEW.`user_name`), 'Привет! добро пожаловать на мою страничку в SocialDB');
+END
+//
+DELIMITER ;
+
+INSERT INTO `SocialDB`.`lst_object_type` (`object_type_name`, `object_type_comment`) VALUES 
+('Карточка пользователя', 'Объект создается тригером автоматически при создании нового пользователя. Пользовтель является в дальнейшем владелецем карточки. К карточе можно прикреплять любые объекты - фото, комментарии и другие. Карточка не прикрепляется ни к какому объекту'),
+('Фотография', 'Пользователи могут прикреплять фоток к любому объекту который принадлежит им (комментарий, фото, карточка и т.д.)'),
+('Комментарий', 'Любой пользователь может разместить комментарий на любой из объектов как на карточку пользователя, фотографию или же другой комментарийтарий или другой объект');
+
+INSERT INTO `SocialDB`.`lst_users` (`user_name`) VALUES
+('Алексей'),
+('Андрей'),
+('Ольга'),
+('Иван'),
+('Павел'),
+('Анна'),
+('Анастасия'),
+('Елена');
+
+INSERT INTO `reg_object` (`object_type_id`, `user_id`, `object_create_date`, `ref_object_id`, `object_link`, `object_content`) VALUES 
+(2, 1, CURDATE(), 1, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Алексей'),
+(2, 2, CURDATE(), 2, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Андрей'),
+(2, 3, CURDATE(), 3, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Ольга'),
+(2, 4, CURDATE(), 4, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Иван'),
+(2, 5, CURDATE(), 5, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Павел'),
+(2, 6, CURDATE(), 6, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Анна'),
+(2, 7, CURDATE(), 7, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Анастасия'),
+(2, 8, CURDATE(), 8, CONCAT('https://www.socialdb/files/', `user_id`, "photo"), 'Мое фото с друзьями, Елена'),
+(3, 1, CURDATE(), 16, '', 'Хорошее было время!'),
+(3, 2, CURDATE(), 15, '', '))'),
+(3, 3, CURDATE(), 14, '', 'нужно повторить'),
+(3, 4, CURDATE(), 7, '', 'супер'),
+(3, 5, CURDATE(), 12, '', 'Ж:)'),
+(3, 6, CURDATE(), 5, '', 'ты супер!'),
+(3, 7, CURDATE(), 1, '', 'Привет, хорошо что присоеденился!'),
+(3, 8, CURDATE(), 9, '', 'отлично!');
+
+INSERT INTO `SocialDB`.`reg_like` (`user_id`, `object_id`) VALUES
+
+(1, 2), (1, 3), (1, 7), (1, 12), (1, 15), (1, 19), (1, 22),
+
+(2, 1), (2, 4), (2, 7), (2, 9), (2, 11), (2, 14), (2, 16), (2, 17), (2, 20),
+
+(3, 1), (3, 2), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), (3, 10), (3, 11), (3, 12), (3, 13), (3, 14), (3, 15), (3, 16),  (3, 19), (3, 20), (3, 21), (3, 22),
+
+(4, 2), (4, 5), (4, 8), (4, 10), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18), (4, 20), (4, 23), (4, 24),
+
+(5, 1), (5, 2), (5, 4), (5, 9), (5, 11), (5, 12), (5, 15), (5, 16), (5, 18), (5, 19), (5, 20), (5, 24),
+
+(6, 2), (6, 7), (6, 8), (6, 9), (6, 10), (6, 14), (6, 15), (6, 18), (6, 21), (6, 22),
+
+(7, 3), (7, 2), (7, 6), (7, 8), (7, 9), (7, 13), (7, 14), (7, 15), (7, 16), (7, 17), (7, 18), (7, 23), (7, 24),
+
+(8, 1), (8, 2), (8, 3), (8, 5), (8, 7), (8, 10), (8, 11), (8, 12), (8, 14), (8, 15), (8, 16), (8, 20), (8, 21), (8, 22), (8, 23), (8, 24);
+
+#Создайте запрос, который выведет информацию: 
+#- id пользователя;
+#- имя;
+#- лайков получено;
+#- лайков поставлено;
+#- взаимные лайки (взаимные лайки - понятие комплексное. в моем запросе взаимные лайки - это из сумм лайков поставленных пользователям друг другу)
+
+
+
+CREATE VIEW `likes_post_get_by_user_id` 
+AS
+SELECT `reg_like`.`user_id` AS `user_id_post`, `reg_object`.`user_id` AS `user_id_got` , count(`reg_like`.`object_id`) AS `like_count`
+
+FROM `reg_like` LEFT JOIN `reg_object` ON `reg_like`.`object_id` = `reg_object`.`object_id`
+
+GROUP BY `reg_like`.`user_id`, `reg_object`.`user_id`;
+
+SELECT ANY_VALUE(tmp.`user_name`) AS `User Name`, tmp.`user_id` AS `User id`, SUM(tmp.`like_posted`) AS `Like posted`, SUM(tmp.`like_got`) AS `Like got`, SUM(tmp.`mutual_like`) AS `Mutual like`
+
+FROM 
+(SELECT ANY_VALUE(`lst_users`.`user_name`) AS `user_name`, T1.`user_id_post` AS `user_id`, 0 AS `like_posted`, 0 AS `like_got`, SUM(IF(T2.`like_count` < T1.`like_count`, T2.`like_count`,T1.`like_count`)) AS `mutual_like`
+
+FROM (`likes_post_get_by_user_id` T1 INNER JOIN `likes_post_get_by_user_id` T2 ON T1.`user_id_got` = T2.`user_id_post` AND T2.`user_id_got` = T1.`user_id_post`) LEFT JOIN `lst_users` ON `lst_users`.`user_id` = T1.`user_id_post`
+
+GROUP BY T1.`user_id_post`
+
+UNION SELECT ANY_VALUE(`lst_users`.`user_name`) AS `user_name`, `reg_object`.`user_id` AS `user_id`, 0 AS `like_posted`, COUNT(`reg_like`.`object_id`) AS `likes_got`, 0 AS `mutual_like`
+
+FROM (`reg_object` INNER JOIN `reg_like` ON `reg_object`.`object_id` = `reg_like`.`object_id`) LEFT JOIN `lst_users` ON `lst_users`.`user_id` = `reg_object`.`user_id`
+
+GROUP BY `reg_object`.`user_id`
+
+UNION SELECT ANY_VALUE(`lst_users`.`user_name`) AS `user_name`, `reg_like`.`user_id` AS `user_id`, count(`reg_like`.`object_id`) AS `like_posted`, 0 AS `likes_got`, 0 AS `mutual_like`
+FROM `reg_like` LEFT JOIN `lst_users` on `lst_users`.`user_id` = `reg_like`.`user_id`
+
+GROUP BY `reg_like`.`user_id`) tmp
+
+GROUP BY tmp.user_id;
+
+#Задача 2. Для структуры из задачи 1 выведите список всех пользователей,
+#которые поставили лайк пользователям A и B (id задайте произвольно),
+#но при этом не поставили лайк пользователю C.
+set @A_user_id := 1;
+set @B_user_id := 2;
+set @C_user_id := 3;
+SELECT
+`lst_users`.`user_name`,
+(SUM(IF(`reg_object`.`user_id` =  @A_user_id, 1 , 0))) AS A_USER_Likes,
+(SUM(IF(`reg_object`.`user_id` =  @B_user_id, 1 , 0))) AS B_USER_Likes,
+(SUM(IF(`reg_object`.`user_id` =  @C_user_id, 1 , 0))) AS C_USER_Likes
+FROM (`lst_users` LEFT JOIN `reg_like` ON `lst_users`.`user_id` = `reg_like`.`user_id`) LEFT JOIN `reg_object` ON `reg_object`.`object_id` = `reg_like`.`object_id`
+GROUP BY `lst_users`.`user_id`
+HAVING C_USER_Likes = 0 AND A_USER_Likes > 0 AND B_USER_Likes > 0;
+
+
+#Задача 3. Добавим сущности «Фотография» и «Комментарии к фотографии».
+#Нужно создать функционал для пользователей, который позволяет ставить лайки не только пользователям,
+#но и фото или комментариям к фото. Учитывайте следующие ограничения: 
+
+#- пользователь не может дважды лайкнуть одну и ту же сущность;
+ALTER TABLE `reg_like` ADD UNIQUE INDEX (`user_id`, `object_id`);
+
+
+#- пользователь имеет право отозвать лайк (Отзыв лайка по object_id = 1 и user_id = 2)
+DELETE FROM `SocialDB`.`reg_like` WHERE `object_id`= 1 AND `user_id`= 2; 
+
+#- необходимо иметь возможность считать число полученных сущностью лайков и выводить список пользователей, поставивших лайки;
+# Список пользователей поставивших лайк
+SELECT
+`lst_users`.`user_name` AS `User Name`,
+`lst_users`.`user_id` AS `User ID`,
+`lst_object_type`.`object_type_name` AS `Тип сущности получившей лайк`,
+`reg_object`.`object_id`,
+`reg_object`.`user_id` AS `User ID Пользователя получившего лайк` 
+FROM ((`reg_like` LEFT JOIN `lst_users` ON `reg_like`.`user_id` = `lst_users`.`user_id`) LEFT JOIN `reg_object` ON`reg_like`.`object_id` = `reg_object`.`object_id`) LEFT JOIN `lst_object_type` ON `lst_object_type`.`object_type_id` = `reg_object`.`object_type_id`
+ORDER BY `User Name`, `Тип сущности получившей лайк`;
+
+# Кол-во лайков полученных сущностью
+SELECT
+ANY_VALUE(`lst_users`.`user_name`) AS `User Name`,
+ANY_VALUE(`lst_users`.`user_id`) AS `User ID`,
+ANY_VALUE(`lst_object_type`.`object_type_name`) AS `Тип сущности`,
+`reg_object`.`object_id`,
+(COUNT(`reg_like`.`object_id`)) AS `Получено лайков`
+
+FROM ((`reg_like` LEFT JOIN `reg_object` ON`reg_like`.`object_id` = `reg_object`.`object_id`) LEFT JOIN `lst_object_type` ON `lst_object_type`.`object_type_id` = `reg_object`.`object_type_id`) LEFT JOIN `lst_users` ON `lst_users`.`user_id` = `reg_object`.`user_id`
+
+GROUP BY `reg_object`.`object_id`
+ORDER BY `User Name`, `Тип сущности`;
+
+#- в будущем могут появиться новые виды сущностей, которые можно лайкать.
+# структура позволяет создавать какое угодно кол-во типов сущностей

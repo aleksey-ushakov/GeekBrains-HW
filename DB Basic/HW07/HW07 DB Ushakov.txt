@@ -1,0 +1,47 @@
+﻿#1. Создать нового пользователя и задать ему права доступа на базу данных «Страны и города мира».
+
+CREATE USER IF NOT EXISTS 'lesha'@'%' IDENTIFIED BY '123123';	
+GRANT ALL PRIVILEGES ON `CountryDB`.* TO 'lesha'@'%';
+FLUSH PRIVILEGES;
+
+# Команда с предоставлением прав доступа сработала только в консоли и не захотела работать из Workbanch (Error Code: 1044. Access denied for user 'root'@'%' to database 'CountryDB')
+
+2. Сделать резервную копию базы, удалить базу и пересоздать из бекапа.
+# команда в консоли, нужно было обязательно создать папку - команда сама папку не создает (в доп ключах не ковырялся)
+
+root@MySQL8:/# mkdir ~/mysql_dump
+root@MySQL8:/# mysqldump -u lesha -p123123 'CountryDB' > ~/mysql_dump/CountryDB.sql
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+
+root@MySQL8:/# mysql -u lesha -p
+
+mysql> DROP SCHEMA `CountryDB`;
+Query OK, 5 rows affected (0,12 sec)
+
+mysql> SHOW SCHEMAS;
++--------------------+
+| Database           |
++--------------------+
+| OfficeDB           |
+| information_schema |
+| mysql              |
+| performance_schema |
+| phpmyadmin         |
+| sys                |
++--------------------+
+6 rows in set (0,00 sec)
+
+root@MySQL8:~/mysql_dump# mysql -u lesha -p123123 CountryDB < ~/mysql_dump/CountryDB.sql
+mysql: [Warning] Using a password on the command line interface can be insecure.
+ERROR 1049 (42000): Unknown database 'CountryDB'
+
+# У меня сработала команда только тогда когда я зашел в mysql и создал пустую базу mysql - думаю стоит отметить в методичке
+
+mysql> CREATE SCHEMA IF NOT EXISTS CountryDB;
+
+root@MySQL8:~/mysql_dump# mysql -ulesha -p123123 CountryDB < CountryDB.sql
+
+
+
+
+

@@ -79,7 +79,6 @@ class RecSys:
                                 random_state=21)
         
         df_train = self.df_sm.copy()
-        df_train.drop_duplicates(subset=['user_id', 'item_id'], keep='first', inplace=True)
         cat_feat_idx = df_train.dtypes[df_train.dtypes == 'object'].index.to_list()
         df_train[cat_feat_idx] = df_train[cat_feat_idx].fillna('')
         
@@ -88,6 +87,7 @@ class RecSys:
         self.catb_model_columns = df_train.drop(columns=['user_id', 'item_id', 'flag']).columns.to_list()
         
         df_train['proba'] = catbm.predict_proba(df_train[self.catb_model_columns])[:,1]
+        df_train.drop_duplicates(subset=['user_id', 'item_id'], keep='first', inplace=True)
         df_train.sort_values(by=['user_id', 'proba'], ascending=[True, False], inplace=True)
         df_train['item_id'] = df_train['item_id'].astype(int)
         
@@ -354,7 +354,7 @@ class RecSys:
                                                       self.df_users['top_purchases_by_user'],
                                                       self.df_users['als_recommender'],
                                                       self.df_users['own_recommender']))
-        self.df_users['basic_recommender'] = self.df_users['basic_recommender'].map(lambda zp: np.unique(np.array(list(zip(zp[0], zp[1], zp[2], zp[3], zp[4]))).flatten()))
+        self.df_users['basic_recommender'] = self.df_users['basic_recommender'].map(lambda zp: np.array(list(zip(zp[0], zp[1], zp[2], zp[3], zp[4]))).flatten())
     
     
     # preprocess test data (adding 'purchases' column based on sales)
